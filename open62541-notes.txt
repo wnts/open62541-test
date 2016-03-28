@@ -1,0 +1,61 @@
+Hier is beschreven hoe ik te werk gegaan ben (voor future reference).
+* Vermeldingen van documentatie verwijzen naar de sphinx documentatie.
+* paths zijn relatief tov de open62541 directory
+
+**********************
+* Build
+**********************
+
+
+**********************
+* Programma
+**********************
+Code voor het opzetten van een simpele server zonder address space (naast de
+standaard address space) is goed gedocumenteerd.
+
+== ADDRESS SPACE OPVULLEN MET CUSTOM NODES ==
+=============================================
+De meest efficiënte manier gebeurt mbv het python programma tools/pyUANamespace/generate_open62541CCode.py 
+Dit programma neemt als input een xml bestand dat de address space beschrijft, en genereert een .h en een .c
+bestand. Het .c bestand bevat een functie die aangeroepen moet worden in de server applicatie om
+de namespace in te vullen. het .h bestand bevat een aantal macro's die in de serverapplicatie gebruikt
+kunnen worden om de refereren naar de nodes in de address space (NODEIDs).
+
+Command:
+
+python tools/pyUANamespace/generate_open62541CCode.py -i tools/pyUANamespace/NodeID_Blacklist_FullNS0.txt ~/builds/open62541/tools/schema/namespace0/Opc.Ua.NodeSet2.xml my_namespace_space.xml output_name
+
+De -i optie en eropvolgende parameter zorgen ervoor dat de standard address space niet wordt gegenereerd, aangezien
+deze al in libopen62541.so zit gecompileerd. De Opc.Ua.NodeSet2.xml parameter is nodig omdat de custom nodes in
+"my_namespace.xml" gebruik maken van nodes in de standaard address space (ReferenceTypes, ObjectTypes, etc...).
+Het resultaat van bovenstaand commando zijn de bestanden output_name.h en output_name.c: output_name.c
+bevat een functie output_name(UA_Server * server) die door de serverapplicatie moet worden aangeroepen.
+
+== OBJECTEN INSTANTIËREN ==
+===========================
+De documentatie verwijst naar een functie UA_Server_AddInstanceOf, maar deze is nergens terug te vinden (grep -rn "AddInstanceOf").
+(Waarschijnlijk een functie uit een vorige versie)
+
+De juiste functie is UA_Add_ObjectNode (ua_server.h). (Voor elke NodeClass bestaat een functie UA_Add*Node: UA_Server_AddVariableNode, UA_Server_AddViewNode, ...)
+Deze functie is niet gedocumenteerd, maar een aantal voorbeelden zijn terug te vinden in examples/server.c. 
+Een object(of een node met een andere NodeClass) aanmaken mbv UA_Add*Node creeërt enkel de node zelf, een reference naar een parent node (waarvan het ReferenceType gekozen kan worden) en een HasTypeReference.
+Een volledig object instantiëren bestaat dus uit het aanmaken van de Object node mbv UA_Server_addObjectNode, vervolgens het aanmaken
+van Variable en Method Nodes mbv UA_Server_addVariableNode en UA_Server_AdddMethodNode en vervolgens het maken van de nodige references mbv de UA_Server_addReference functie.
+In dit opzicht is het makkelijker (wanneer de situatie het toelaat) om objecten vooraf te instantïeren en via bovenstaande methode in de address space te plaatsen (Zie "ADDRESS SPACE OPVULLEN MET CUSTOM NODES").
+
+== DATASOURCE KOPPELEN AAN VARIABLES ==
+=======================================
+[Dit is niet gedocumenteerd maar een voorbeeld is terug te vinden in examples/server_datasource.c]
+Om een databron te koppelen aan een Variable moet de Variable node aangemaakt worden met de UA_Server_addDataSourceVariableNode functie ipv met de UA_Server_AddVariableNode functie (zie vorige paragraaf).
+Deze functie neemt twee callback functions als parameter die aangeroepen worden wanneer de Variable gelezen of geschreven wordt.
+
+
+
+
+
+
+
+
+
+
+

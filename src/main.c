@@ -118,19 +118,18 @@ int main(void)
 															  .read = temperature_sensor_read,
 															  .write = NULL };
 
-	UA_Server_addDataSourceVariableNode(server,
+	UA_Server_addVariableNode(server,
 							  TemperatureSensor1TemperatureNodeId,
 							  TemperatureSensor1NodeId,
 							  UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT),
 							  UA_QUALIFIEDNAME(1, "Temperature"),
 							  UA_NODEID_NUMERIC(0, UA_NS0ID_ANALOGITEMTYPE),
 							  VarAttr,
-							  TemperatureSensor1TemperatureDataSource,
+							  NULL,
 							  NULL);
 
 	// Connect datasource to the Temperature variable of TemperatureSensor1
-
-	//UA_Server_setVariableNode_dataSource(server, TemperatureSensor1TemperatureNodeId, TemperatureSensor1TemperatureDataSource);
+	UA_Server_setVariableNode_dataSource(server, TemperatureSensor1TemperatureNodeId, TemperatureSensor1TemperatureDataSource);
 
 
 
